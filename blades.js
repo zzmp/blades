@@ -154,7 +154,8 @@
       require: '^blades',
       restrict: 'E',
       transclude: true,
-      replace: false
+      replace: false,
+      template: '<div ng-transclude />'
     };
   };
 
