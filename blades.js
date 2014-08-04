@@ -140,7 +140,8 @@
     return {
       restrict: 'EA',
       transclude: false,
-      replace: false,
+      replace: true,
+      template: '<div class="blades" />',
       controller: 'bladesController',
       link: function(_, element, _, ctrl) {
         ctrl.link(element);
@@ -154,8 +155,8 @@
       require: '^blades',
       restrict: 'E',
       transclude: true,
-      replace: false,
-      template: '<div ng-transclude />'
+      replace: true,
+      template: '<div class="blade" ng-transclude />'
     };
   };
 
