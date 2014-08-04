@@ -1,0 +1,26 @@
+{
+  "name": "blades",
+  "version": "0.0.0",
+  "description": "A stack of states",
+  "main": "blades.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/zzmp/blades.git"
+  },
+  "keywords": [
+    "angular",
+    "state",
+    "stack",
+    "blade",
+    "accordion"
+  ],
+  "author": "Zach Pomerantz <zmp@umich.edu> (http://garabagne.io/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zzmp/blades/issues"
+  },
+  "homepage": "https://github.com/zzmp/blades"
+}
