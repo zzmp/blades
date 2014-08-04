@@ -1,0 +1,26 @@
+{
+  "name": "blades",
+  "main": "blades.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/zzmp/blades",
+  "authors": [
+    "zzmp <zmp@umich.edu>"
+  ],
+  "description": "A stack of states",
+  "keywords": [
+    "angular",
+    "state",
+    "stack",
+    "blade",
+    "accordion"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "client/lib",
+    "test",
+    "tests"
+  ]
+}
