@@ -49,6 +49,10 @@
     this.pop = function() {
       scope.$emit('blades:pop');
     };
+
+    this.empty = function() {
+      scope.$emit('blades:empty');
+    };
   };
 
   var Provider = function() {
@@ -91,6 +95,12 @@
       $blades.$bootstrap();
     };
 
+    var pop = function(blade) {
+      blade.remove();
+      scopes.pop().$destroy();
+      blades.pop();
+    };
+
     $rootScope.$on('blades:push', function(e, blade, controller) {
       var scope = last(scopes).$new();
       var element;
@@ -110,11 +120,17 @@
     $rootScope.$on('blades:pop', function(e) {
       var blade;
 
-      if (blade = last(blades)) {
-        blade.remove();
-        scopes.pop().$destroy();
-        blades.pop();
-      }
+      if (blade = last(blades))
+        pop(blade);
+
+      e.stopPropagation();
+    });
+
+    $rootScope.$on('blades:empty', function(e) {
+      var blade;
+      
+      while (blade = last(blades))
+        pop(blade);
 
       e.stopPropagation();
     });
