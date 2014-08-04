@@ -50,6 +50,10 @@
       scope.$emit('blades:pop');
     };
 
+    this.emptyTo = function(blade) {
+      scope.$emit('blades:emptyTo', blade);
+    };
+
     this.empty = function() {
       scope.$emit('blades:empty');
     };
@@ -83,7 +87,6 @@
   var Controller =
       function($rootScope, $scope, $compile, $controller, $templateCache,
         $blades) {
-    var scopes = [$scope];
     var blades = [];
     var parent;
 
@@ -96,23 +99,27 @@
     };
 
     var pop = function(blade) {
-      blade.remove();
-      scopes.pop().$destroy();
+      blade.element.remove();
+      blade.scope.$destroy();
       blades.pop();
     };
 
     $rootScope.$on('blades:push', function(e, blade, controller) {
-      var scope = last(scopes).$new();
-      var element;
+      var lastBlade = last(blades);
+      var scope, element;
 
-      scopes.push(scope);
-      element = controller ?
-        $compile($templateCache.get(blade))
-          (scope, null, $controller(controller, {$scope: scope})) :
-        $compile($templateCache.get(blade))(scope);
+      var newBlade = {
+        name: blade,
+        scope: scope = (lastBlade ? lastBlade.scope : $scope).$new()
+      };
+      
+      newBlade.element = element = controller ?
+          $compile($templateCache.get(blade))
+            (scope, null, $controller(controller, {$scope: scope})) :
+          $compile($templateCache.get(blade))(scope);
 
       parent.append(element);
-      blades.push(element);
+      blades.push(newBlade);
 
       e.stopPropagation();
     });
@@ -122,6 +129,18 @@
 
       if (blade = last(blades))
         pop(blade);
+
+      e.stopPropagation();
+    });
+
+    $rootScope.$on('blades:emptyTo', function(e, name) {
+      var blade;
+
+      while(blade = last(blades)) {
+        if (blade.name === name)
+          break;
+        pop(blade);
+      }
 
       e.stopPropagation();
     });
