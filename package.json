@@ -22,5 +22,16 @@
   "bugs": {
     "url": "https://github.com/zzmp/blades/issues"
   },
-  "homepage": "https://github.com/zzmp/blades"
+  "homepage": "https://github.com/zzmp/blades",
+  "dependencies": {
+    "gulp": "^3.8.7",
+    "gulp-jshint": "^1.8.4",
+    "gulp-notify": "^1.4.2",
+    "jshint-stylish": "^0.4.0"
+  },
+  "devDependencies": {
+    "gulp-concat": "^2.3.4",
+    "gulp-mocha": "^0.5.2",
+    "gulp-uglify": "^0.3.1"
+  }
 }

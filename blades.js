@@ -1,190 +1,205 @@
-(function() {
+(function(angular) {
 
-  function last(array) {
-    return array.length ? array[array.length - 1] : undefined;
-  }
+ /* jshint boss: true */
 
-  var Service = function($exceptionHandler, scope, $http, $templateCache,
-      register, bootstack) {
-    this.$bootstrap = function() {
-      angular.forEach(bootstack, function(blade) {
-        this.push(blade);
-      }, this);
+var Controller =
+    function($rootScope, $scope, $compile, $controller, $templateCache,
+      $blades) {
+  var blades = [];
+  var parent;
+
+  this.link = function(element) {
+    parent = element;
+  };
+
+  this.$bootstrap = function() {
+    $blades.$bootstrap();
+  };
+
+  var pop = function(blade) {
+    blade.element.remove();
+    blade.scope.$destroy();
+    blades.pop();
+  };
+
+  $rootScope.$on('blades:push', function(e, blade, controller) {
+    var lastBlade = last(blades);
+    var scope, element;
+
+    var newBlade = {
+      name: blade,
+      scope: scope = (lastBlade ? lastBlade.scope : $scope).$new()
     };
+    
+    newBlade.element = element = controller ?
+        $compile($templateCache.get(blade))
+          (scope, null, $controller(controller, {$scope: scope})) :
+        $compile($templateCache.get(blade))(scope);
 
-    this.push = function(blade) {
-      var options;
+    parent.append(element);
+    blades.push(newBlade);
 
-      if (!(options = register[blade])) {
-        $exceptionHandler(Error('Blade [' + blade + '] is not registered.'));
-        return;
-      }
+    e.stopPropagation();
+  });
 
-      var push =
-        angular.bind(scope, scope.$emit,
-          'blades:push', blade, options.controller);
+  $rootScope.$on('blades:pop', function(e) {
+    var blade;
 
-      if (template = $templateCache.get(blade)) {
+    if (blade = last(blades))
+      pop(blade);
+
+    e.stopPropagation();
+  });
+
+  $rootScope.$on('blades:emptyTo', function(e, name) {
+    var blade;
+
+    while(blade = last(blades)) {
+      if (blade.name === name)
+        break;
+      pop(blade);
+    }
+
+    e.stopPropagation();
+  });
+
+  $rootScope.$on('blades:empty', function(e) {
+    var blade;
+    
+    while (blade = last(blades))
+      pop(blade);
+
+    e.stopPropagation();
+  });
+};
+
+angular.module('blades')
+  .controller('bladesController',
+    ['$rootScope', '$scope', '$compile', '$controller', '$templateCache',
+    'blades', Controller])
+;  
+
+/* jshint shadow: true */
+
+var blades = function() {
+  return {
+    restrict: 'EA',
+    transclude: false,
+    replace: true,
+    template: '<div class="blades" />',
+    controller: 'bladesController',
+    link: function(_, element, _, ctrl) {
+      ctrl.link(element);
+      ctrl.$bootstrap();
+    }
+  };
+};
+
+var blade = function() {
+  return {
+    require: '^blades',
+    restrict: 'E',
+    transclude: true,
+    replace: true,
+    template: '<div class="blade" ng-transclude />'
+  };
+};
+
+angular.module('blades')
+  .directive('blades', blades)
+  .directive('blade', blade)
+;  
+
+angular.module('blades', []);
+
+function last(array) {
+  return array.length ? array[array.length - 1] : undefined;
+}
+
+/* jshint boss: true */
+
+var Service = function($exceptionHandler, scope, $http, $templateCache,
+    register, bootstack) {
+  this.$bootstrap = function() {
+    angular.forEach(bootstack, function(blade) {
+      this.push(blade);
+    }, this);
+  };
+
+  this.push = function(blade) {
+    var options;
+
+    if (!(options = register[blade])) {
+      $exceptionHandler(Error('Blade [' + blade + '] is not registered.'));
+      return;
+    }
+
+    var push =
+      angular.bind(scope, scope.$emit,
+        'blades:push', blade, options.controller);
+
+    if (template = $templateCache.get(blade)) {
+      push();
+    } else {
+      if (options.template) {
+        $templateCache.put(blade, options.template);
         push();
       } else {
-        if (options.template) {
-          $templateCache.put(blade, options.template);
-          push();
-        } else {
-          $http.get(register[blade].templateUrl)
-            .success(function(template) {
-              $templateCache.put(blade, template);
-              push();
-            })
-            .error(function(error) {
-              error.message =
-                'Blade [' + blade + '] could not be retrieved from server.\n' +
-               error.message;
-              $exceptionHandler(error);
-            });
-        }
+        $http.get(register[blade].templateUrl)
+          .success(function(template) {
+            $templateCache.put(blade, template);
+            push();
+          })
+          .error(function(error) {
+            error.message =
+              'Blade [' + blade + '] could not be retrieved from server.\n' +
+             error.message;
+            $exceptionHandler(error);
+          });
       }
-    };
-
-    this.pop = function() {
-      scope.$emit('blades:pop');
-    };
-
-    this.emptyTo = function(blade) {
-      scope.$emit('blades:emptyTo', blade);
-    };
-
-    this.empty = function() {
-      scope.$emit('blades:empty');
-    };
+    }
   };
 
-  var Provider = function() {
-    var register = {};
-    var bootstack = [];
-
-    this.register = function(name, options) {
-      register[name] = options;
-      return this;
-    };
-
-    this.bootstrap = function(names) {
-      var push = angular.bind(bootstack, Array.prototype.push);
-
-      if (angular.isArray(names)) {
-        angular.forEach(names, function(name) { push(name); });
-      } else
-        push(names);
-    };
-
-    this.$get =
-        function($exceptionHandler, $rootScope, $http, $templateCache) {
-      return new Service($exceptionHandler, $rootScope, $http, $templateCache,
-        register, bootstack);
-    };
+  this.pop = function() {
+    scope.$emit('blades:pop');
   };
 
-  var Controller =
-      function($rootScope, $scope, $compile, $controller, $templateCache,
-        $blades) {
-    var blades = [];
-    var parent;
-
-    this.link = function(element) {
-      parent = element;
-    };
-
-    this.$bootstrap = function() {
-      $blades.$bootstrap();
-    };
-
-    var pop = function(blade) {
-      blade.element.remove();
-      blade.scope.$destroy();
-      blades.pop();
-    };
-
-    $rootScope.$on('blades:push', function(e, blade, controller) {
-      var lastBlade = last(blades);
-      var scope, element;
-
-      var newBlade = {
-        name: blade,
-        scope: scope = (lastBlade ? lastBlade.scope : $scope).$new()
-      };
-      
-      newBlade.element = element = controller ?
-          $compile($templateCache.get(blade))
-            (scope, null, $controller(controller, {$scope: scope})) :
-          $compile($templateCache.get(blade))(scope);
-
-      parent.append(element);
-      blades.push(newBlade);
-
-      e.stopPropagation();
-    });
-
-    $rootScope.$on('blades:pop', function(e) {
-      var blade;
-
-      if (blade = last(blades))
-        pop(blade);
-
-      e.stopPropagation();
-    });
-
-    $rootScope.$on('blades:emptyTo', function(e, name) {
-      var blade;
-
-      while(blade = last(blades)) {
-        if (blade.name === name)
-          break;
-        pop(blade);
-      }
-
-      e.stopPropagation();
-    });
-
-    $rootScope.$on('blades:empty', function(e) {
-      var blade;
-      
-      while (blade = last(blades))
-        pop(blade);
-
-      e.stopPropagation();
-    });
+  this.emptyTo = function(blade) {
+    scope.$emit('blades:emptyTo', blade);
   };
 
-  var blades = function() {
-    return {
-      restrict: 'EA',
-      transclude: false,
-      replace: true,
-      template: '<div class="blades" />',
-      controller: 'bladesController',
-      link: function(_, element, _, ctrl) {
-        ctrl.link(element);
-        ctrl.$bootstrap();
-      }
-    };
+  this.empty = function() {
+    scope.$emit('blades:empty');
+  };
+};
+
+var Provider = function() {
+  var register = {};
+  var bootstack = [];
+
+  this.register = function(name, options) {
+    register[name] = options;
+    return this;
   };
 
-  var blade = function() {
-    return {
-      require: '^blades',
-      restrict: 'E',
-      transclude: true,
-      replace: true,
-      template: '<div class="blade" ng-transclude />'
-    };
+  this.bootstrap = function(names) {
+    var push = angular.bind(bootstack, Array.prototype.push);
+
+    if (angular.isArray(names)) {
+      angular.forEach(names, function(name) { push(name); });
+    } else
+      push(names);
   };
 
-  angular.module('blades', [])
-    .provider('blades', Provider)
-    .controller('bladesController',
-      ['$rootScope', '$scope', '$compile', '$controller', '$templateCache',
-      'blades', Controller])
-    .directive('blades', blades)
-    .directive('blade', blade)
-  ;  
-}() ) ;
+  this.$get =
+      function($exceptionHandler, $rootScope, $http, $templateCache) {
+    return new Service($exceptionHandler, $rootScope, $http, $templateCache,
+      register, bootstack);
+  };
+};
+
+angular.module('blades')
+  .provider('blades', Provider)
+;  
+
+}(angular) );
