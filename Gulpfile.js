@@ -1,4 +1,6 @@
-var gulp      = require('gulp'),
+var bower     = require('./bower.json'),
+    sh        = require('shelljs'),
+    gulp      = require('gulp'),
     notify    = require('gulp-notify'),
     jshint    = require('gulp-jshint'),
     stylish   = require('jshint-stylish'),
@@ -6,16 +8,27 @@ var gulp      = require('gulp'),
     concat    = require('gulp-concat'),
     uglify    = require('gulp-uglify');
 
+var dependencies = [];
+
+var paths = JSON.parse(
+  sh.exec('./node_modules/.bin/bower list --paths --json', { silent: true })
+    .output);
+
+for (var dependency in paths)
+  if (dependency in bower.dependencies)
+    dependencies.push(paths[dependency]);
+
 var paths = {
-  scripts: ['./src/**/*.js'],
-  tests: ['./tests/**/*.js'],
+  blades: ['./src/*.js'],
   preamble: ['./build/preamble.js'],
   postamble: ['./build/postamble.js'],
+  tests: ['./tests/**/*.js'],
+  dependencies: dependencies,
 };
 
 // lint scripts
 gulp.task('lint', function () {
-  return gulp.src(paths.scripts)
+  return gulp.src(paths.blades)
     .pipe(jshint({ lookup: false }))
     .pipe(jshint.reporter(stylish))
     .pipe(notify({message: 'Jshint done'}));
@@ -30,8 +43,7 @@ gulp.task('test', function() {
 // build dist
 gulp.task('build', function() {
   // concatenate
-  console.log(paths.preamble.concat(paths.scripts, paths.postamble));
-  gulp.src(paths.preamble.concat(paths.scripts, paths.postamble))
+  gulp.src(dependencies.concat(paths.preamble, paths.blades, paths.postamble))
     .pipe(concat('blades.js'))
     .pipe(gulp.dest('.'));
   // minify
@@ -43,7 +55,7 @@ gulp.task('build', function() {
 
 // watch all for changes
 gulp.task('watch', function () {
-  gulp.watch(paths.scripts, ['lint', 'test', 'build']);
+  gulp.watch(paths.blades, ['lint', 'test', 'build']);
   gulp.watch(paths.tests, ['test']);
 });
 

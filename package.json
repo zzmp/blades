@@ -4,7 +4,9 @@
   "description": "A stack of states",
   "main": "blades.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "./node_modules/.bin/bower i",
+    "test": "npm i && ./node_modules/.bin/gulp",
+    "prepublish": "git add -f ./blades.js ./blades.min.js"
   },
   "repository": {
     "type": "git",
@@ -23,15 +25,15 @@
     "url": "https://github.com/zzmp/blades/issues"
   },
   "homepage": "https://github.com/zzmp/blades",
-  "dependencies": {
-    "gulp": "^3.8.7",
-    "gulp-jshint": "^1.8.4",
-    "gulp-notify": "^1.4.2",
-    "jshint-stylish": "^0.4.0"
-  },
   "devDependencies": {
+    "bower": "^1.3.9",
+    "gulp": "^3.8.7",
     "gulp-concat": "^2.3.4",
+    "gulp-jshint": "^1.8.4",
     "gulp-mocha": "^0.5.2",
-    "gulp-uglify": "^0.3.1"
+    "gulp-notify": "^1.4.2",
+    "gulp-uglify": "^0.3.1",
+    "jshint-stylish": "^0.4.0",
+    "shelljs": "^0.3.0"
   }
 }

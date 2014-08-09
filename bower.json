@@ -22,5 +22,11 @@
     "client/lib",
     "test",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "angular-scroll": "~0.6.1"
+  },
+  "devDependencies": {
+    "angular": "~1.2.21"
+  }
 }
