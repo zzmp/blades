@@ -3,17 +3,20 @@ var duScrollDefaultEasing=function(e){"use strict";return.5>e?Math.pow(2*e,2)/2:
 (function(angular) {
 
 angular.module('blades', [])
-  .run(['$document', function($document) {
-    var style = $document.createElement('style');
+  .run(function() {
+    // Don't break with in tests
+    if (document) {
+      var style = document.createElement('style');
 
-    addRule = angular.bind(style,  addRule);  
-    //addRule('.blades', rules);
-    //addRule('.blade', rules);
+      addRule = angular.bind(style,  addRule);  
+      //addRule('.blades', rules);
+      //addRule('.blade', rules);
 
-    // Webkit compatibility
-    style.appendChild($document.createTextnode(''));
-    document.head.appendChild(style);
-  }])
+      // Webkit compatibility
+      style.appendChild(document.createTextNode(''));
+      document.head.appendChild(style);
+    }
+  })
 ;
 
 function last(array) {
