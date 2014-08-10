@@ -19,7 +19,7 @@ for (var dependency in paths)
     dependencies.push(paths[dependency]);
 
 var paths = {
-  blades: ['./src/*.js'],
+  blades: ['./src/blades.js', './src/*.*.js'],
   preamble: ['./build/preamble.js'],
   postamble: ['./build/postamble.js'],
   tests: ['./tests/**/*.js'],
