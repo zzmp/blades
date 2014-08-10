@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "./node_modules/.bin/bower i",
     "test": "npm i && ./node_modules/.bin/gulp",
-    "prepublish": "git add -f ./blades.js ./blades.min.js"
+    "prepublish": "./node_modules/.bin/gulp build; git add -f ./blades.js ./blades.min.js; git commit --amend --no-edit; git push -f git@github.com:zzmp/blades.git master"
   },
   "repository": {
     "type": "git",
