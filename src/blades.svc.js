@@ -20,7 +20,7 @@ var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
 
     var push =
       angular.bind(scope, scope.$emit,
-        'blades:push', blade, mark, options.controller);
+        'blades:push', blade, options.controller);
 
     if (template = $templateCache.get(blade)) {
       push();
@@ -45,22 +45,15 @@ var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
   };
 
   this.pop = function() {
-    scope.$emit('blades:pop', mark);
+    scope.$emit('blades:pop');
   };
 
   this.emptyTo = function(blade) {
-    scope.$emit('blades:emptyTo', blade, mark);
+    scope.$emit('blades:emptyTo', blade);
   };
 
   this.empty = function() {
     scope.$emit('blades:empty');
-    mark = {};
-  };
-
-  this.resize = function() {
-    var change = mark.blade.element[0].getBoundingClientRect().width - mark.blade.width;
-    scope.$emit('blades:resize', change + padding);
-    mark.blade.width += change;
   };
 };
 
