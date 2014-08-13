@@ -2,22 +2,7 @@ var duScrollDefaultEasing=function(e){"use strict";return.5>e?Math.pow(2*e,2)/2:
 //# sourceMappingURL=angular-scroll.min.js.map
 (function(angular) {
 
-angular.module('blades', [])
-  .run(function() {
-    // Don't break with in tests
-    if (document) {
-      var style = document.createElement('style');
-
-      addRule = angular.bind(style,  addRule);  
-      //addRule('.blades', rules);
-      //addRule('.blade', rules);
-
-      // Webkit compatibility
-      style.appendChild(document.createTextNode(''));
-      document.head.appendChild(style);
-    }
-  })
-;
+angular.module('blades', []);
 
 function last(array) {
   return array.length ? array[array.length - 1] : undefined;
@@ -30,6 +15,50 @@ function addRule(selector, rules, index) {
   } else
     this.addRule(selector, rules, index);
 }
+function removeRule(index) {
+  if (this.removeRule) {
+    this.removeRule(index);
+  } else
+    this.deleteRule(index);
+}
+
+var setWidth;
+
+angular.module('blades')
+  .run(function() {
+    // Don't break with in tests
+    if (document) {
+      var style = document.createElement('style');
+      // Webkit compatibility
+      style.appendChild(document.createTextNode(''));
+      document.head.appendChild(style);
+      
+      var sheet = style.sheet;
+
+      addRule = angular.bind(sheet,  addRule);
+      addRule('.blades', [
+        'height: 100%',
+        'overflow-y: hidden',
+        'overflow-x: auto',
+      ].join('; '));
+      addRule('.blade', [
+        'height: 100%',
+        'overflow-y: scroll',
+        'float: left',
+        'display: inline-box',
+      ].join('; '));
+
+      angular.forEach([10, 20, 30, 40, 50, 60, 70, 80, 90], function(height) {
+        addRule('.blade' + height, 'height: ' + height + '%');
+      });
+
+      setWidth = function(px) {
+        removeRule.call(sheet, 0);
+        addRule('.blades', 'width: ' + px + 'px');
+      };
+    }
+  })
+;
 
  /* jshint boss: true */
 
@@ -37,6 +66,7 @@ var Controller =
     function($rootScope, $scope, $compile, $controller, $templateCache,
       $blades) {
   var blades = [];
+  var right = 0;
   var parent;
 
   this.link = function(element) {
@@ -48,12 +78,16 @@ var Controller =
   };
 
   var pop = function(blade) {
+    right = blade.element[0].getBoundingClientRect().left;
+
     blade.element.remove();
     blade.scope.$destroy();
     blades.pop();
+
+    setWidth(right);
   };
 
-  $rootScope.$on('blades:push', function(e, blade, controller) {
+  $rootScope.$on('blades:push', function(e, blade, mark, controller) {
     var lastBlade = last(blades);
     var scope, element;
 
@@ -70,19 +104,27 @@ var Controller =
     parent.append(element);
     blades.push(newBlade);
 
+    newBlade.width = newBlade.element[0].getBoundingClientRect().width;
+    right += newBlade.width;
+    setWidth(right);
+
+    mark.blade = newBlade;
+
     e.stopPropagation();
   });
 
-  $rootScope.$on('blades:pop', function(e) {
+  $rootScope.$on('blades:pop', function(e, mark) {
     var blade;
 
     if (blade = last(blades))
       pop(blade);
 
+    mark.blade = last(blades);
+
     e.stopPropagation();
   });
 
-  $rootScope.$on('blades:emptyTo', function(e, name) {
+  $rootScope.$on('blades:emptyTo', function(e, name, mark) {
     var blade;
 
     while(blade = last(blades)) {
@@ -90,6 +132,8 @@ var Controller =
         break;
       pop(blade);
     }
+
+    mark.blade = blade;
 
     e.stopPropagation();
   });
@@ -99,6 +143,13 @@ var Controller =
     
     while (blade = last(blades))
       pop(blade);
+
+    e.stopPropagation();
+  });
+
+  $rootScope.$on('blades:resize', function(e, change) {
+    right += change;
+    setWidth(right);
 
     e.stopPropagation();
   });
@@ -143,8 +194,10 @@ angular.module('blades')
 
 /* jshint boss: true */
 
-var Service = function($exceptionHandler, scope, $http, $templateCache,
-    register, bootstack) {
+var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
+    register, bootstack, padding) {
+  var mark = {};
+
   this.$bootstrap = function() {
     angular.forEach(bootstack, function(blade) {
       this.push(blade);
@@ -161,7 +214,7 @@ var Service = function($exceptionHandler, scope, $http, $templateCache,
 
     var push =
       angular.bind(scope, scope.$emit,
-        'blades:push', blade, options.controller);
+        'blades:push', blade, mark, options.controller);
 
     if (template = $templateCache.get(blade)) {
       push();
@@ -186,21 +239,29 @@ var Service = function($exceptionHandler, scope, $http, $templateCache,
   };
 
   this.pop = function() {
-    scope.$emit('blades:pop');
+    scope.$emit('blades:pop', mark);
   };
 
   this.emptyTo = function(blade) {
-    scope.$emit('blades:emptyTo', blade);
+    scope.$emit('blades:emptyTo', blade, mark);
   };
 
   this.empty = function() {
     scope.$emit('blades:empty');
+    mark = {};
+  };
+
+  this.resize = function() {
+    var change = mark.blade.element[0].getBoundingClientRect().width - mark.blade.width;
+    scope.$emit('blades:resize', change + padding);
+    mark.blade.width += change;
   };
 };
 
 var Provider = function() {
   var register = {};
   var bootstack = [];
+  var padding = 1;
 
   this.register = function(name, options) {
     register[name] = options;
@@ -215,11 +276,15 @@ var Provider = function() {
     } else
       push(names);
   };
+  
+  this.padding = function(px) {
+    padding = px;
+  };
 
   this.$get =
-      function($exceptionHandler, $rootScope, $http, $templateCache) {
-    return new Service($exceptionHandler, $rootScope, $http, $templateCache,
-      register, bootstack);
+      function($exceptionHandler, $rootScope, $q, $http, $templateCache) {
+    return new Service($exceptionHandler, $rootScope, $q, $http, $templateCache,
+      register, bootstack, padding);
   };
 };
 
