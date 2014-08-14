@@ -10,7 +10,7 @@ var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
     }, this);
   };
 
-  this.push = function(blade) {
+  this.push = function(blade, advance) {
     var options;
 
     if (!(options = register[blade])) {
@@ -18,9 +18,11 @@ var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
       return;
     }
 
-    var push =
-      angular.bind(scope, scope.$emit,
-        'blades:push', blade, options.controller);
+    var push = function() {
+      scope.$emit('blades:push', blade, options.controller);
+      if (advance)
+        scope.$emit('blades:advance');
+    };
 
     if (template = $templateCache.get(blade)) {
       push();
@@ -42,6 +44,10 @@ var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
           });
       }
     }
+  };
+
+  this.advance = function() {
+    scope.$emit('blades:advance');
   };
 
   this.pop = function() {

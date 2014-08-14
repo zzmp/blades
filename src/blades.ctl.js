@@ -1,7 +1,7 @@
  /* jshint boss: true */
 
 var Controller =
-    function($rootScope, $scope, $compile, $controller, $templateCache,
+    function($rootScope, $scope, $compile, $controller, $templateCache, $timeout,
       $blades) {
   var blades = [];
   var parent;
@@ -40,6 +40,27 @@ var Controller =
     e.stopPropagation();
   });
 
+  $rootScope.$on('blades:advance', function(e) {
+    /* Ensure that blades are only advanced after the $digest loop
+     * This allows lists to be filled with ngRepeat, etc.
+     */
+    $timeout(function() {
+      var blade = last(blades);
+      if (!blade)
+        // No blades
+        return;
+
+      var bladesEl = blade.element.parent()[0];
+
+      // TODO: Animate the scroll
+      bladesEl.scrollLeft +=
+        blade.element[0].getClientRects()[0].left -
+        bladesEl.getClientRects()[0].left;
+
+      e.stopPropagation();
+    });
+  });
+
   $rootScope.$on('blades:pop', function(e) {
     var blade;
 
@@ -73,6 +94,6 @@ var Controller =
 
 angular.module('blades')
   .controller('bladesController',
-    ['$rootScope', '$scope', '$compile', '$controller', '$templateCache',
+    ['$rootScope', '$scope', '$compile', '$controller', '$templateCache', '$timeout',
     'blades', Controller])
 ;  
