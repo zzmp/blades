@@ -2,7 +2,6 @@
 
 var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
     register, bootstack, padding) {
-  var mark = {};
 
   this.$bootstrap = function() {
     angular.forEach(bootstack, function(blade) {

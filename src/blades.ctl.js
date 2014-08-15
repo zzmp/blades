@@ -58,7 +58,7 @@ var Controller =
         bladesEl.getClientRects()[0].left;
 
       e.stopPropagation();
-    });
+    }, 0, false);
   });
 
   $rootScope.$on('blades:pop', function(e) {

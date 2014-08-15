@@ -115,7 +115,7 @@ var Controller =
         bladesEl.getClientRects()[0].left;
 
       e.stopPropagation();
-    });
+    }, 0, false);
   });
 
   $rootScope.$on('blades:pop', function(e) {
@@ -190,7 +190,6 @@ angular.module('blades')
 
 var Service = function($exceptionHandler, scope, $q, $http, $templateCache,
     register, bootstack, padding) {
-  var mark = {};
 
   this.$bootstrap = function() {
     angular.forEach(bootstack, function(blade) {
